@@ -1,0 +1,4 @@
+services:
+  frontend:
+    image: ${FRONTEND_DEPLOY_IMAGE:?FRONTEND_DEPLOY_IMAGE must be set}
+

@@ -1,0 +1,4 @@
+services:
+  app:
+    image: ${BACKEND_DEPLOY_IMAGE:?BACKEND_DEPLOY_IMAGE must be set}
+
