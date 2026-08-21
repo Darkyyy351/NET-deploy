@@ -75,3 +75,19 @@ If this check fails, do not force the update. Inspect the current deployment fir
 docker inspect --format '{{.Config.Image}}' net-backend net-frontend
 docker images
 ```
+
+## CM5 system standby preflight
+
+NET Eco Mode keeps the API online and only reduces application polling and heartbeat writes. It is not a host sleep state.
+
+Before enabling a real CM5 standby action, run the read-only inspection:
+
+```bash
+cd ~/apps/NET-deploy
+chmod +x standby-preflight.sh
+./standby-preflight.sh
+```
+
+The script reports kernel power states, RTC wake support, relevant Raspberry Pi bootloader values, power-button detection, USB runtime power policy and NET container health. It does not change configuration or suspend the host.
+
+The planned System Standby flow will use a narrow host-side system service. The backend container will not receive the Docker socket, unrestricted `sudo`, or direct control of host systemd. Wake-up must be confirmed first through the CM5 power button, an RTC alarm, or both.
