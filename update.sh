@@ -13,9 +13,13 @@ HEALTH_TIMEOUT="${NET_HEALTH_TIMEOUT:-90}"
 BACKEND_OVERRIDE="$SCRIPT_DIR/compose.backend.override.yml"
 FRONTEND_OVERRIDE="$SCRIPT_DIR/compose.frontend.override.yml"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+DEPLOYMENT_STATUS_FILE="$BACKEND_DIR/data/deployment.json"
 
 OLD_BACKEND_IMAGE=""
 OLD_FRONTEND_IMAGE=""
+BACKEND_SHA=""
+FRONTEND_SHA=""
 ROLLBACK_REQUIRED=0
 
 log() {
@@ -45,7 +49,12 @@ require_clean_repo() {
 backend_compose() {
   local image="$1"
   shift
-  env BACKEND_DEPLOY_IMAGE="$image" docker compose \
+  env \
+    BACKEND_DEPLOY_IMAGE="$image" \
+    NET_COMMIT_SHA="${BACKEND_SHA:-development}" \
+    NET_BUILD_TIME="$BUILD_TIME" \
+    NET_IMAGE_REF="$image" \
+    docker compose \
     --project-directory "$BACKEND_DIR" \
     -f "$BACKEND_DIR/docker-compose.yml" \
     -f "$BACKEND_OVERRIDE" \
@@ -55,11 +64,37 @@ backend_compose() {
 frontend_compose() {
   local image="$1"
   shift
-  env FRONTEND_DEPLOY_IMAGE="$image" docker compose \
+  env \
+    FRONTEND_DEPLOY_IMAGE="$image" \
+    NET_COMMIT_SHA="${FRONTEND_SHA:-development}" \
+    NET_BUILD_TIME="$BUILD_TIME" \
+    NET_IMAGE_REF="$image" \
+    docker compose \
     --project-directory "$FRONTEND_DIR" \
     -f "$FRONTEND_DIR/docker-compose.yml" \
     -f "$FRONTEND_OVERRIDE" \
     "$@"
+}
+
+write_deployment_status() {
+  local status="$1"
+  local backend_commit="$2"
+  local backend_image="$3"
+  local frontend_commit="$4"
+  local frontend_image="$5"
+  local temp_file="${DEPLOYMENT_STATUS_FILE}.tmp"
+
+  printf '%s\n' \
+    '{' \
+    '  "schemaVersion": 1,' \
+    "  \"status\": \"$status\"," \
+    "  \"deployedAt\": \"$BUILD_TIME\"," \
+    "  \"backend\": { \"commit\": \"$backend_commit\", \"image\": \"$backend_image\" }," \
+    "  \"frontend\": { \"commit\": \"$frontend_commit\", \"image\": \"$frontend_image\" }" \
+    '}' > "$temp_file"
+
+  chmod 600 "$temp_file"
+  mv -f "$temp_file" "$DEPLOYMENT_STATUS_FILE"
 }
 
 wait_for_healthy() {
@@ -98,7 +133,8 @@ rollback() {
     frontend_compose "$OLD_FRONTEND_IMAGE" up -d --no-build frontend
     wait_for_healthy net-backend
     wait_for_healthy net-frontend
-    log "Rollback finished. Runtime data and configuration were not changed."
+    write_deployment_status "rolled_back" "" "$OLD_BACKEND_IMAGE" "" "$OLD_FRONTEND_IMAGE"
+    log "Rollback finished. Device/log data and configuration were not changed."
   fi
 
   exit "$exit_code"
@@ -158,6 +194,7 @@ log "Switching frontend to $NEW_FRONTEND_IMAGE."
 frontend_compose "$NEW_FRONTEND_IMAGE" up -d --no-build frontend
 wait_for_healthy net-frontend
 
+write_deployment_status "healthy" "$BACKEND_SHA" "$NEW_BACKEND_IMAGE" "$FRONTEND_SHA" "$NEW_FRONTEND_IMAGE"
 ROLLBACK_REQUIRED=0
 trap - ERR
 
@@ -165,4 +202,3 @@ log "Update completed successfully."
 printf '  Backend:  %s\n' "$BACKEND_SHA"
 printf '  Frontend: %s\n' "$FRONTEND_SHA"
 printf '  Backup:   %s\n' "$BACKUP_DIR/backend-data.tar.gz"
-
