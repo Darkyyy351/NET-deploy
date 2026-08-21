@@ -40,9 +40,10 @@ The script:
 3. fast-forwards backend and frontend from `origin/main`;
 4. builds uniquely tagged images while the current containers keep running;
 5. switches backend and frontend and waits for Docker healthchecks;
-6. restores both previous images automatically if either service fails.
+6. records the active commits and deployment time for the dashboard;
+7. restores both previous images automatically if either service fails.
 
-The script never edits `.env`, backend data or Uptime Kuma. Old images are retained so they can be inspected or removed manually after a successful update.
+The script never edits `.env`, device/log data or Uptime Kuma. It writes only `data/deployment.json`, which contains non-secret image, commit, timestamp and status metadata for the dashboard. Old images are retained so they can be inspected or removed manually after a successful update.
 
 ## Custom Paths
 
@@ -74,4 +75,3 @@ If this check fails, do not force the update. Inspect the current deployment fir
 docker inspect --format '{{.Config.Image}}' net-backend net-frontend
 docker images
 ```
-
