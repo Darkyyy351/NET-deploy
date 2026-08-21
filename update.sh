@@ -39,11 +39,20 @@ require_clean_repo() {
   local directory="$1"
   local name="$2"
   local branch
+  local changes
 
   git -C "$directory" rev-parse --is-inside-work-tree >/dev/null 2>&1 || fail "$name is not a Git repository: $directory"
   branch="$(git -C "$directory" branch --show-current)"
   [[ "$branch" == "$DEPLOY_BRANCH" ]] || fail "$name must be on branch '$DEPLOY_BRANCH' (currently '$branch')."
-  [[ -z "$(git -C "$directory" status --porcelain)" ]] || fail "$name contains local changes. Commit or remove them before updating."
+  changes="$(git -C "$directory" status --porcelain --untracked-files=all)"
+
+  # Older backend checkouts do not ignore this generated status file yet.
+  if [[ "$name" == "Backend" ]]; then
+    changes="${changes//$'?? data/deployment.json\n'/}"
+    changes="${changes//$'?? data/deployment.json'/}"
+  fi
+
+  [[ -z "$changes" ]] || fail "$name contains local changes. Commit or remove them before updating."
 }
 
 backend_compose() {
