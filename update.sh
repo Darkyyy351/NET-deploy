@@ -15,6 +15,7 @@ FRONTEND_OVERRIDE="$SCRIPT_DIR/compose.frontend.override.yml"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 DEPLOYMENT_STATUS_FILE="$BACKEND_DIR/data/deployment.json"
+FAN_CONTROL_SOCKET="${NET_FAN_CONTROL_SOCKET:-/run/net-fan-control/control.sock}"
 
 OLD_BACKEND_IMAGE=""
 OLD_FRONTEND_IMAGE=""
@@ -161,6 +162,7 @@ done
 [[ -f "$BACKEND_DIR/.env" ]] || fail "Backend .env is missing."
 [[ -f "$FRONTEND_DIR/.env" ]] || fail "Frontend .env is missing."
 [[ -d "$BACKEND_DIR/data" ]] || fail "Backend data directory is missing."
+[[ -S "$FAN_CONTROL_SOCKET" ]] || fail "Fan control helper is not installed. Run: sudo $SCRIPT_DIR/install-fan-control.sh"
 
 docker info >/dev/null
 docker compose version >/dev/null

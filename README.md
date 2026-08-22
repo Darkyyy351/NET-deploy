@@ -33,6 +33,18 @@ git pull --ff-only origin main
 ./update.sh
 ```
 
+## CM5 fan control helper
+
+NET 0.2 uses a narrow host-side helper for time-limited fan tests. Install it once before the first update that includes fan control:
+
+```bash
+cd ~/apps/NET-deploy
+sudo ./install-fan-control.sh
+./update.sh
+```
+
+The helper keeps Linux `step_wise` control as the default, accepts only fan states 0-4 for at most 60 seconds, rejects Fan Off at 60 C or above, and restores kernel control on timeout, high temperature, service stop or backend failure. The backend receives only the helper Unix socket; it does not receive `sudo`, systemd access or the Docker socket.
+
 The script:
 
 1. checks Docker, both repositories, branches, local changes, `.env` files and current rollback images;

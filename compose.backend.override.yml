@@ -1,4 +1,10 @@
 services:
   app:
     image: ${BACKEND_DEPLOY_IMAGE:?BACKEND_DEPLOY_IMAGE must be set}
-
+    volumes:
+      - type: bind
+        source: /run/net-fan-control
+        target: /run/net-fan-control
+        read_only: true
+        bind:
+          create_host_path: false
