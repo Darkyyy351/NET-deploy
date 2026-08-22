@@ -25,7 +25,8 @@ grep -qw user_space /sys/class/thermal/thermal_zone0/available_policies || { pri
 install -D -m 0755 "$SCRIPT_DIR/fan-control/net-fan-control.py" /usr/local/lib/net/net-fan-control.py
 install -D -m 0644 "$SCRIPT_DIR/fan-control/net-fan-control.service" /etc/systemd/system/net-fan-control.service
 systemctl daemon-reload
-systemctl enable --now net-fan-control.service
+systemctl enable net-fan-control.service
+systemctl restart net-fan-control.service
 
 for _ in {1..20}; do
   [[ -S /run/net-fan-control/control.sock ]] && break
