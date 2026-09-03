@@ -9,6 +9,7 @@ Restart=always
 RestartSec=1
 RuntimeDirectory=net-fan-control
 RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
 NoNewPrivileges=true
 CapabilityBoundingSet=
 PrivateTmp=true

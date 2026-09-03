@@ -43,7 +43,7 @@ sudo ./install-fan-control.sh
 ./update.sh
 ```
 
-The helper keeps Linux `step_wise` control as the default, accepts only fan states 0-4 for at most 60 seconds, rejects Fan Off at 60 C or above, and restores kernel control on timeout, high temperature, service stop or backend failure. The backend receives only the helper Unix socket; it does not receive `sudo`, systemd access or the Docker socket.
+The helper keeps Linux `step_wise` control as the default, accepts only fan states 0-4 for at most 60 seconds, rejects Fan Off at 60 C or above, and restores kernel control on timeout, high temperature, service stop or backend failure. Its runtime directory exists from early boot and is preserved across service restarts so the backend keeps its read-only Unix socket mount. The backend does not receive `sudo`, systemd access or the Docker socket.
 
 The script:
 
