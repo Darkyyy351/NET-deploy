@@ -1,0 +1,9 @@
+services:
+  app:
+    volumes:
+      - type: bind
+        source: /run/net-host-control
+        target: /run/net-host-control
+        read_only: true
+        bind:
+          create_host_path: false

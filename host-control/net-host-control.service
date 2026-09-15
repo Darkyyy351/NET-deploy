@@ -1,0 +1,21 @@
+[Unit]
+Description=NET release and host power controller
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/lib/net/host-control/net-host-control.py
+Restart=on-failure
+RestartSec=5
+RuntimeDirectory=net-host-control
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+StateDirectory=net-host-control
+StateDirectoryMode=0700
+UMask=0077
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

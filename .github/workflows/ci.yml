@@ -21,11 +21,15 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Validate Bash syntax
-        run: bash -n update.sh
+        run: |
+          bash -n update.sh
+          bash -n install-host-control.sh
+
+      - name: Test host control
+        run: python3 host-control/test_host_control.py
 
       - name: Install ShellCheck
         run: sudo apt-get update && sudo apt-get install --yes shellcheck
 
       - name: Lint updater
-        run: shellcheck update.sh
-
+        run: shellcheck update.sh install-host-control.sh

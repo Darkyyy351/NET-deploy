@@ -16,6 +16,18 @@ TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 DEPLOYMENT_STATUS_FILE="$BACKEND_DIR/data/deployment.json"
 FAN_CONTROL_SOCKET="${NET_FAN_CONTROL_SOCKET:-/run/net-fan-control/control.sock}"
+BACKEND_REF="${NET_BACKEND_REF:-}"
+FRONTEND_REF="${NET_FRONTEND_REF:-}"
+for ref in "$BACKEND_REF" "$FRONTEND_REF"; do
+  [[ -z "$ref" || "$ref" =~ ^[0-9a-f]{40}$ ]] || { printf 'Invalid release commit\n' >&2; exit 1; }
+done
+[[ -d "$APPS_DIR" ]] || { printf 'Apps directory missing\n' >&2; exit 1; }
+exec 9>"$APPS_DIR/.net-update.lock"
+flock -n 9 || { printf 'Another NET update or power action is active\n' >&2; exit 1; }
+HOST_OVERRIDE=()
+if [[ -S /run/net-host-control/control.sock ]]; then
+  HOST_OVERRIDE=(-f "$SCRIPT_DIR/compose.host-control.override.yml")
+fi
 
 OLD_BACKEND_IMAGE=""
 OLD_FRONTEND_IMAGE=""
@@ -68,6 +80,7 @@ backend_compose() {
     --project-directory "$BACKEND_DIR" \
     -f "$BACKEND_DIR/docker-compose.yml" \
     -f "$BACKEND_OVERRIDE" \
+    "${HOST_OVERRIDE[@]}" \
     "$@"
 }
 
@@ -182,9 +195,15 @@ log "Backend data backed up to $BACKUP_DIR/backend-data.tar.gz"
 
 log "Fetching $DEPLOY_BRANCH for backend and frontend."
 git -C "$BACKEND_DIR" fetch origin "$DEPLOY_BRANCH"
-git -C "$BACKEND_DIR" merge --ff-only "origin/$DEPLOY_BRANCH"
 git -C "$FRONTEND_DIR" fetch origin "$DEPLOY_BRANCH"
-git -C "$FRONTEND_DIR" merge --ff-only "origin/$DEPLOY_BRANCH"
+BACKEND_TARGET="${BACKEND_REF:-origin/$DEPLOY_BRANCH}"
+FRONTEND_TARGET="${FRONTEND_REF:-origin/$DEPLOY_BRANCH}"
+git -C "$BACKEND_DIR" merge-base --is-ancestor "$BACKEND_TARGET" "origin/$DEPLOY_BRANCH" || fail 'Backend release is not on the deployment branch.'
+git -C "$FRONTEND_DIR" merge-base --is-ancestor "$FRONTEND_TARGET" "origin/$DEPLOY_BRANCH" || fail 'Frontend release is not on the deployment branch.'
+git -C "$BACKEND_DIR" merge-base --is-ancestor HEAD "$BACKEND_TARGET" || fail 'Backend release would diverge or downgrade.'
+git -C "$FRONTEND_DIR" merge-base --is-ancestor HEAD "$FRONTEND_TARGET" || fail 'Frontend release would diverge or downgrade.'
+git -C "$BACKEND_DIR" merge --ff-only "$BACKEND_TARGET"
+git -C "$FRONTEND_DIR" merge --ff-only "$FRONTEND_TARGET"
 
 BACKEND_SHA="$(git -C "$BACKEND_DIR" rev-parse --short=12 HEAD)"
 FRONTEND_SHA="$(git -C "$FRONTEND_DIR" rev-parse --short=12 HEAD)"
