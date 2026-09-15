@@ -9,7 +9,9 @@ ExecStart=/usr/bin/python3 /usr/local/lib/net/host-control/net-host-control.py
 Restart=on-failure
 RestartSec=5
 RuntimeDirectory=net-host-control
-RuntimeDirectoryMode=0700
+# The deploy user must be able to stat the fixed socket path so update.sh can
+# include its read-only bind mount. The socket itself remains root-only (0600).
+RuntimeDirectoryMode=0711
 RuntimeDirectoryPreserve=yes
 StateDirectory=net-host-control
 StateDirectoryMode=0700

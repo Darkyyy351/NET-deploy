@@ -35,8 +35,11 @@ sudo python3 -c 'import json; print(json.load(open("/etc/net-host-control.json")
 ```
 
 The initial CLI update mounts the helper socket. It does not restart/power off the host.
-The backend container currently runs as root; the socket is root-only. A future non-root
-container migration must explicitly arrange a dedicated socket group, not chmod 666.
+The backend container currently runs as root; the socket is root-only (`0600`). Its
+runtime directory is traverse-only (`0711`) so the unprivileged updater can detect the
+fixed socket path without listing the directory or connecting to the socket. A future
+non-root container migration must explicitly arrange a dedicated socket group, not
+chmod 666.
 
 ## Publishing an update
 
