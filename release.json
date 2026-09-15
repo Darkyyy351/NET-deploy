@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
-  "version": "0.2.0-dev.1",
+  "version": "0.2.0-dev.2",
   "backend": "9999bad6b3f9f43c092887824de6054cb851fb5a",
-  "frontend": "5f3f96ed7653b6009519bdf21e50b920b1c15c85",
+  "frontend": "f24aa9da0033453af23151dfba31510496be3dfc",
   "notes": [
     "Chráněný CM5 Master Control pro plánovaný restart a vypnutí.",
     "Řízená kontrola a instalace aktualizací s připnutými commity, zálohou a rollbackem.",
     "Trvalá upozornění na dostupnost zařízení, filtrování a export událostí.",
-    "Vylepšené rozhraní sekcí Logs, Security a ovládání CM5."
+    "Vylepšené rozhraní sekcí Logs, Security a ovládání CM5.",
+    "Pětisekundové podržení před odemknutím restartu nebo vypnutí CM5."
   ]
 }
