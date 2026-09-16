@@ -13,6 +13,8 @@ Missing/invalid manifest or network failure is unavailable, never "up to date".
 Only a release manifest is an update announcement; normal development commits are not.
 Install runs as the configured deployment user, pins both SHAs, retains backups and
 image rollback from update.sh, and survives replacing backend/frontend containers.
+The helper keeps the newest 20 installation results in its root-only state directory;
+the dashboard exposes this read-only history without exposing the update log.
 It cannot automatically upgrade its own privileged helper; protocol changes require
 manual installer execution and should not be advertised as compatible releases.
 
@@ -68,6 +70,7 @@ while using this interface. Cancelling must not be used to manage externally sch
 ## Troubleshooting and verification
 
 - `/var/lib/net-host-control/update.log`: last installation output (root-only).
+- `/var/lib/net-host-control/history.json`: newest installation outcomes (root-only).
 - `journalctl -u net-host-control`: helper service errors.
 - A helper restart during an operation reports interrupted; inspect actual containers.
 - If the frontend starts after a reboot but the backend does not, verify

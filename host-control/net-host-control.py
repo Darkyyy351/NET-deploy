@@ -18,6 +18,13 @@ INSTALL_DIR = Path('/usr/local/lib/net/host-control')
 STATE_DIR = Path('/var/lib/net-host-control')
 SOCKET = '/run/net-host-control/control.sock'
 SCHEDULE = Path('/run/systemd/shutdown/scheduled')
+HISTORY_LIMIT = 20
+BASELINE_HISTORY = [{
+    'version': '0.2.0-dev.2',
+    'state': 'baseline',
+    'at': None,
+    'message': 'Baseline release recorded before automatic update history was enabled.'
+}]
 
 
 def net_power_pending():
@@ -73,6 +80,30 @@ class Controller:
         temp.write_text(json.dumps(self.operation))
         temp.replace(STATE_DIR / 'operation.json')
 
+    def history(self):
+        path = STATE_DIR / 'history.json'
+        try:
+            value = json.loads(path.read_text())
+            if isinstance(value, list):
+                return [item for item in value if isinstance(item, dict)][:HISTORY_LIMIT]
+        except (OSError, ValueError):
+            pass
+        return list(BASELINE_HISTORY)
+
+    def record_history(self, state, release, message):
+        try:
+            entry = {'version': release['version'], 'state': state, 'at': now(), 'message': message,
+                     'backend': release['backend'], 'frontend': release['frontend']}
+            history = [item for item in self.history() if item.get('version') != release['version']]
+            history.insert(0, entry)
+            STATE_DIR.mkdir(parents=True, exist_ok=True)
+            temp = STATE_DIR / 'history.tmp'
+            temp.write_text(json.dumps(history[:HISTORY_LIMIT]))
+            temp.replace(STATE_DIR / 'history.json')
+        except (OSError, ValueError, TypeError, KeyError):
+            # Installation result remains authoritative even if optional history cannot be written.
+            pass
+
     def status(self):
         with self.lock:
             deployed = {}
@@ -85,7 +116,7 @@ class Controller:
             state = 'unavailable' if self.error else 'unchecked' if not self.release else 'current' if current else 'available'
             return {'available': True, 'updateState': state, 'checking': self.checking,
                     'checkedAt': self.checked_at, 'release': self.release, 'error': self.error,
-                    'operation': dict(self.operation), 'powerAvailable': True}
+                    'operation': dict(self.operation), 'history': self.history(), 'powerAvailable': True}
 
     def check(self):
         with self.lock:
@@ -137,14 +168,18 @@ class Controller:
                                       '/bin/bash', str(INSTALL_DIR / 'update.sh')],
                                      env=env, stdout=log, stderr=subprocess.STDOUT, check=False)
             with self.lock:
-                self.operation = {'state': 'succeeded' if result.returncode == 0 else 'failed',
+                state = 'succeeded' if result.returncode == 0 else 'failed'
+                message = 'Update completed' if result.returncode == 0 else 'Update failed; inspect host update.log and container status.'
+                self.operation = {'state': state,
                                   'version': release['version'], 'at': now(),
-                                  'message': 'Update completed' if result.returncode == 0 else 'Update failed; inspect host update.log and container status.'}
+                                  'message': message}
                 self.save()
+                self.record_history(state, release, message)
         except Exception:
             with self.lock:
-                self.operation = {'state': 'failed', 'at': now(), 'message': 'Host updater could not finish.'}
+                self.operation = {'state': 'failed', 'version': release['version'], 'at': now(), 'message': 'Host updater could not finish.'}
                 self.save()
+                self.record_history('failed', release, self.operation['message'])
 
     def handle(self, request):
         if not isinstance(request, dict):

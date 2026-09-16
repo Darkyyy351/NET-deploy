@@ -32,6 +32,11 @@ class HostTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 host.validate_release(dict(self.release, **change))
 
+    def test_history_starts_with_baseline_release(self):
+        history = self.controller.status()['history']
+        self.assertEqual(history[0]['version'], '0.2.0-dev.2')
+        self.assertEqual(history[0]['state'], 'baseline')
+
     def test_unknown_not_current(self):
         self.assertEqual(self.controller.status()['updateState'], 'unchecked')
         self.controller.release = self.release
@@ -82,6 +87,9 @@ class HostTests(unittest.TestCase):
         self.assertEqual(args.args[0][:4], ['/usr/sbin/runuser', '-u', 'darkman', '--'])
         self.assertEqual(args.kwargs['env']['NET_BACKEND_REF'], 'a'*40)
         self.assertEqual(self.controller.operation['state'], 'succeeded')
+        history = json.loads((host.STATE_DIR/'history.json').read_text())
+        self.assertEqual(history[0]['version'], '0.2.1')
+        self.assertEqual(history[0]['state'], 'succeeded')
 
     def test_rate_limit(self):
         for _ in range(5):
@@ -108,6 +116,7 @@ class HostTests(unittest.TestCase):
         self.runner.return_value.returncode = 1
         self.controller.install(self.release)
         self.assertEqual(self.controller.operation['state'], 'failed')
+        self.assertEqual(self.controller.status()['history'][0]['state'], 'failed')
 
     def test_network_error_retains_check_time(self):
         self.controller.release = self.release
