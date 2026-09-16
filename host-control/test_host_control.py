@@ -60,6 +60,15 @@ class HostTests(unittest.TestCase):
         self.assertEqual(self.runner.call_args.args[0], ['/usr/sbin/shutdown', '-c'])
         self.assertIsNone(self.controller.guard)
 
+    def test_stale_power_state_is_persisted_as_interrupted(self):
+        host.STATE_DIR.mkdir()
+        state = host.STATE_DIR / 'operation.json'
+        state.write_text(json.dumps(dict(state='scheduled', action='reboot')))
+        with patch.object(host, 'net_power_pending', return_value=False):
+            controller = host.Controller(self.config, self.runner)
+        self.assertEqual(controller.operation['state'], 'interrupted')
+        self.assertEqual(json.loads(state.read_text())['state'], 'interrupted')
+
     def test_install_rejects_changed_release(self):
         self.controller.release = self.release
         with self.assertRaises(ValueError):

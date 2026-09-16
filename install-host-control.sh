@@ -13,9 +13,18 @@ command -v flock >/dev/null
 if [[ -f /var/lib/net-host-control/operation.json ]]; then
   python3 - <<'PY'
 import json
+from pathlib import Path
+
 state = json.load(open('/var/lib/net-host-control/operation.json')).get('state')
-if state in ('installing', 'scheduled'):
+if state == 'installing':
     raise SystemExit('Host action active. Finish or cancel it before reinstalling the helper.')
+if state == 'scheduled':
+    try:
+        pending = 'NET administrator request' in Path('/run/systemd/shutdown/scheduled').read_text()
+    except OSError:
+        pending = False
+    if pending:
+        raise SystemExit('Host action active. Finish or cancel it before reinstalling the helper.')
 PY
 fi
 runuser -u "$USER_NAME" -- docker info >/dev/null
@@ -37,6 +46,8 @@ install -D -m 0755 "$SCRIPT_DIR/host-control/net-host-control.py" /usr/local/lib
 install -m 0755 "$SCRIPT_DIR/update.sh" /usr/local/lib/net/host-control/update.sh
 install -m 0644 "$SCRIPT_DIR"/compose.*.override.yml /usr/local/lib/net/host-control/
 install -D -m 0644 "$SCRIPT_DIR/host-control/net-host-control.service" /etc/systemd/system/net-host-control.service
+install -D -m 0644 "$SCRIPT_DIR/host-control/net-host-control.tmpfiles.conf" /etc/tmpfiles.d/net-host-control.conf
+systemd-tmpfiles --create /etc/tmpfiles.d/net-host-control.conf
 systemctl daemon-reload
 systemctl enable net-host-control.service
 systemctl restart net-host-control.service

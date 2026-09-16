@@ -65,6 +65,7 @@ class Controller:
                 self.guard = self.acquire_guard()
             elif self.operation.get('state') in ('installing', 'scheduled'):
                 self.operation = {'state': 'interrupted', 'message': 'Previous action ended or was interrupted. Verify host status.', 'at': now()}
+                self.save()
 
     def save(self):
         STATE_DIR.mkdir(parents=True, exist_ok=True)

@@ -39,7 +39,8 @@ The backend container currently runs as root; the socket is root-only (`0600`). 
 runtime directory is traverse-only (`0711`) so the unprivileged updater can detect the
 fixed socket path without listing the directory or connecting to the socket. A future
 non-root container migration must explicitly arrange a dedicated socket group, not
-chmod 666.
+chmod 666. A `systemd-tmpfiles` rule creates the runtime directory early during boot,
+before Docker restores the backend container and validates its bind mount.
 
 ## Publishing an update
 
@@ -69,6 +70,8 @@ while using this interface. Cancelling must not be used to manage externally sch
 - `/var/lib/net-host-control/update.log`: last installation output (root-only).
 - `journalctl -u net-host-control`: helper service errors.
 - A helper restart during an operation reports interrupted; inspect actual containers.
+- If the frontend starts after a reboot but the backend does not, verify
+  `/run/net-host-control` exists and reinstall the helper to restore its tmpfiles rule.
 - Never interpret a lost browser response as failure and blindly repeat power actions.
 - Run unit tests: `python3 host-control/test_host_control.py`.
 - Before enabling on CM5: verify real socket permissions, manual-update lock exclusion,
