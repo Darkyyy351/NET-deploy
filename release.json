@@ -1,11 +1,10 @@
 {
   "schemaVersion": 1,
-  "version": "0.2.0-dev.4",
+  "version": "0.2.0-dev.5",
   "backend": "27be9e905b3267de6826f3e682fdb0842e58ede7",
-  "frontend": "fe8eaf05cb3b3c1ee84962ac9511dbd6916734f7",
+  "frontend": "c732b2d1395db76061607919e70691b6bb4f7f94",
   "notes": [
-    "Žlutý průběhový frame během instalace aktualizace.",
-    "Sekvenční animace tří bodů a stavová ikona probíhající instalace.",
-    "Plynulý přechod instalačního frame do zeleného úspěchu nebo červené chyby."
+    "Testovací aktualizace pro ověření nového instalačního průběhu.",
+    "Upřesněný text bezpečnostního potvrzení instalace."
   ]
 }
