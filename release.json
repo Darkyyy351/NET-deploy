@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "version": "0.2.0-dev.5",
   "backend": "27be9e905b3267de6826f3e682fdb0842e58ede7",
-  "frontend": "c732b2d1395db76061607919e70691b6bb4f7f94",
+  "frontend": "1306965d77f8209e6bd4f28bb292c9b79ab2d7a8",
   "notes": [
-    "Testovací aktualizace pro ověření nového instalačního průběhu.",
-    "Upřesněný text bezpečnostního potvrzení instalace."
+    "Jednotné dokončení úspěšné aktualizace a obnovení stránky.",
+    "Výsledkový frame se po dokončení znovu nezobrazuje."
   ]
 }
