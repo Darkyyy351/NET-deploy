@@ -1,12 +1,11 @@
 {
   "schemaVersion": 1,
-  "version": "0.2.0-dev.3",
+  "version": "0.2.0-dev.4",
   "backend": "27be9e905b3267de6826f3e682fdb0842e58ede7",
-  "frontend": "6c7ed69214882a6c070b09f898c62a53339cf62a",
+  "frontend": "fe8eaf05cb3b3c1ee84962ac9511dbd6916734f7",
   "notes": [
-    "Pětisekundové podržení před instalací bez opisování potvrzovací fráze.",
-    "Zelený nebo červený výsledek instalace s bezpečným obnovením stránky.",
-    "Perzistentní historie posledních aktualizací včetně výchozí verze 0.2.0-dev.2.",
-    "Opravené automatické spuštění backendu po restartu CM5."
+    "Žlutý průběhový frame během instalace aktualizace.",
+    "Sekvenční animace tří bodů a stavová ikona probíhající instalace.",
+    "Plynulý přechod instalačního frame do zeleného úspěchu nebo červené chyby."
   ]
 }
