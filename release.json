@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "version": "0.2.0-dev.6",
-  "backend": "404a3dc2e6c4566c111c775a87b0f093d44d4fdc",
-  "frontend": "aa7e375a9e34adedc9fa752839e1e8740198ed9f",
+  "version": "0.2.0-dev.7",
+  "backend": "9cab3a035e89bdb994eb8817b0b1c65da5458000",
+  "frontend": "907c7c6915b7118c10d2abe513c3447c92c7039f",
   "notes": [
-    "Třísekundové bezpečnostní podržení pro citlivé akce.",
-    "Volitelná prodleva restartu a vypnutí: ihned, 1, 5 nebo 10 minut.",
-    "Opravené rušení odložených akcí bez opisování potvrzovacího textu.",
-    "Rozbalovací Info v historii aktualizací s release poznámkami.",
-    "Ruční kontrola aktualizací nyní vždy proběhne a zobrazí jasný výsledek."
+    "Perzistentní 24hodinová historie telemetrie zařízení s minutovým vzorkováním.",
+    "Grafy RSSI a volné paměti s rozsahy 1, 6 a 24 hodin v Monitoringu.",
+    "Automatický záznam přechodů zařízení offline a online v historii dostupnosti.",
+    "Omezené zápisy na disk, pětiminutové dávky a bezpečné uložení při vypnutí backendu.",
+    "Historie zařízení se při jeho odstranění automaticky vyčistí."
   ]
 }
