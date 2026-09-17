@@ -73,6 +73,8 @@ class HostTests(unittest.TestCase):
         self.assertEqual(self.runner.call_args.args[0], ['/usr/sbin/shutdown', '-P', 'now', 'NET administrator request'])
         with self.assertRaisesRegex(ValueError, 'No scheduled'):
             self.controller.handle(dict(action='cancel-power', credential='a'*64))
+        self.controller.guard.close()
+        self.controller.guard = None
 
     def test_power_delay_is_allowlisted(self):
         for delay in (-1, 2, 15, '5', True):
@@ -142,6 +144,12 @@ class HostTests(unittest.TestCase):
         self.assertEqual(self.controller.checked_at, 'previous')
         self.assertEqual(self.controller.status()['updateState'], 'unavailable')
         self.assertFalse(self.controller.checking)
+
+    def test_manual_check_bypasses_automatic_cooldown(self):
+        self.controller.last_attempt = host.time.monotonic()
+        self.assertFalse(self.controller.check())
+        self.assertTrue(self.controller.reserve_check(force=True))
+        self.assertTrue(self.controller.status()['checking'])
 
 
 if __name__ == '__main__':

@@ -120,12 +120,15 @@ class Controller:
                     'checkedAt': self.checked_at, 'release': self.release, 'error': self.error,
                     'operation': dict(self.operation), 'history': self.history(), 'powerAvailable': True}
 
-    def check(self):
+    def reserve_check(self, force=False):
         with self.lock:
-            if self.checking or time.monotonic() - self.last_attempt < 60:
-                return
+            if self.checking or (not force and time.monotonic() - self.last_attempt < 60):
+                return False
             self.checking = True
             self.last_attempt = time.monotonic()
+            return True
+
+    def finish_check(self):
         try:
             request = urllib.request.Request(RELEASE_URL, headers={'User-Agent': 'NET-host-control/1'})
             with urllib.request.urlopen(request, timeout=10) as response:
@@ -141,6 +144,18 @@ class Controller:
         finally:
             with self.lock:
                 self.checking = False
+
+    def check(self, force=False):
+        if not self.reserve_check(force):
+            return False
+        self.finish_check()
+        return True
+
+    def start_check(self, force=False):
+        if not self.reserve_check(force):
+            return False
+        threading.Thread(target=self.finish_check, daemon=True).start()
+        return True
 
     def authenticate(self, credential):
         stamp = time.monotonic()
@@ -190,7 +205,7 @@ class Controller:
         if action == 'status':
             return self.status()
         if action == 'check':
-            threading.Thread(target=self.check, daemon=True).start()
+            self.start_check(force=True)
             return self.status()
         with self.lock:
             self.authenticate(request.get('credential'))
