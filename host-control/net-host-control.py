@@ -19,6 +19,7 @@ STATE_DIR = Path('/var/lib/net-host-control')
 SOCKET = '/run/net-host-control/control.sock'
 SCHEDULE = Path('/run/systemd/shutdown/scheduled')
 HISTORY_LIMIT = 20
+POWER_DELAYS = (0, 1, 5, 10)
 BASELINE_HISTORY = [{
     'version': '0.2.0-dev.2',
     'state': 'baseline',
@@ -93,7 +94,8 @@ class Controller:
     def record_history(self, state, release, message):
         try:
             entry = {'version': release['version'], 'state': state, 'at': now(), 'message': message,
-                     'backend': release['backend'], 'frontend': release['frontend']}
+                     'backend': release['backend'], 'frontend': release['frontend'],
+                     'notes': list(release.get('notes', []))}
             history = [item for item in self.history() if item.get('version') != release['version']]
             history.insert(0, entry)
             STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -193,7 +195,7 @@ class Controller:
         with self.lock:
             self.authenticate(request.get('credential'))
             if action == 'cancel-power':
-                if self.operation.get('state') != 'scheduled' or not net_power_pending():
+                if self.operation.get('state') != 'scheduled' or self.operation.get('delayMinutes', 1) == 0:
                     raise ValueError('No scheduled power action')
                 self.runner(['/usr/sbin/shutdown', '-c'], check=True, timeout=10, capture_output=True)
                 if self.guard:
@@ -223,15 +225,27 @@ class Controller:
                 expected = 'RESTART CM5' if action == 'reboot' else 'VYPNOUT CM5'
                 if request.get('confirmation') != expected:
                     raise ValueError('Confirmation required')
+                delay = request.get('delayMinutes', 1)
+                if isinstance(delay, bool) or delay not in POWER_DELAYS:
+                    raise ValueError('Unsupported power action delay')
                 self.guard = self.acquire_guard()
+                scheduled_at = now()
+                execute_at = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=delay)).isoformat()
+                self.operation = {'state': 'scheduled', 'action': action, 'at': scheduled_at,
+                                  'executeAt': execute_at, 'delayMinutes': delay,
+                                  'cancellable': delay > 0,
+                                  'message': 'Power action starting now' if delay == 0 else f'Power action scheduled in {delay} minute(s)'}
+                self.save()
                 try:
-                    self.runner(['/usr/sbin/shutdown', '-r' if action == 'reboot' else '-P', '+1', 'NET administrator request'], check=True, timeout=10, capture_output=True)
+                    self.runner(['/usr/sbin/shutdown', '-r' if action == 'reboot' else '-P',
+                                 'now' if delay == 0 else f'+{delay}', 'NET administrator request'],
+                                check=True, timeout=10, capture_output=True)
                 except Exception:
                     self.guard.close()
                     self.guard = None
+                    self.operation = {'state': 'idle'}
+                    self.save()
                     raise
-                self.operation = {'state': 'scheduled', 'action': action, 'at': now(), 'message': 'Power action scheduled in one minute'}
-                self.save()
             else:
                 raise ValueError('Unsupported host action')
             return self.status()

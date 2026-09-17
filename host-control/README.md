@@ -13,7 +13,7 @@ Missing/invalid manifest or network failure is unavailable, never "up to date".
 Only a release manifest is an update announcement; normal development commits are not.
 Install runs as the configured deployment user, pins both SHAs, retains backups and
 image rollback from update.sh, and survives replacing backend/frontend containers.
-The helper keeps the newest 20 installation results in its root-only state directory;
+The helper keeps the newest 20 installation results and their release notes in its root-only state directory;
 the dashboard exposes this read-only history without exposing the update log.
 It cannot automatically upgrade its own privileged helper; protocol changes require
 manual installer execution and should not be advertised as compatible releases.
@@ -60,8 +60,9 @@ The pinned release must descend from the local checkouts; no automatic downgrade
 
 ## Power operations
 
-Restart/poweroff requires a typed confirmation and admin key. The host schedules
-shutdown in one minute; the dashboard can cancel NET's pending power operation.
+Restart/poweroff requires an admin key and a three-second hold confirmation. The
+dashboard offers immediate, 1, 5 or 10 minute execution. Delayed NET power actions
+can be cancelled with the same key and hold confirmation; immediate actions cannot.
 It affects all services, including services outside NET. Poweroff requires a separate
 physical/RTC wake mechanism to turn CM5 on again. No wake mechanism is configured here.
 The updater and power actions share a host flock; avoid external shutdown commands

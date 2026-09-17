@@ -55,15 +55,30 @@ class HostTests(unittest.TestCase):
         self.runner.assert_not_called()
 
     def test_power_and_cancel(self):
-        result = self.controller.handle(dict(action='reboot', credential='a'*64, confirmation='RESTART CM5'))
+        result = self.controller.handle(dict(action='reboot', credential='a'*64, confirmation='RESTART CM5', delayMinutes=5))
         self.assertEqual(result['operation']['state'], 'scheduled')
-        self.assertEqual(self.runner.call_args.args[0], ['/usr/sbin/shutdown', '-r', '+1', 'NET administrator request'])
+        self.assertEqual(result['operation']['delayMinutes'], 5)
+        self.assertTrue(result['operation']['cancellable'])
+        self.assertEqual(self.runner.call_args.args[0], ['/usr/sbin/shutdown', '-r', '+5', 'NET administrator request'])
         with self.assertRaises(ValueError):
             self.controller.handle(dict(action='poweroff', credential='a'*64, confirmation='VYPNOUT CM5'))
-        with patch.object(host, 'net_power_pending', return_value=True):
-            self.controller.handle(dict(action='cancel-power', credential='a'*64))
+        self.controller.handle(dict(action='cancel-power', credential='a'*64))
         self.assertEqual(self.runner.call_args.args[0], ['/usr/sbin/shutdown', '-c'])
         self.assertIsNone(self.controller.guard)
+
+    def test_immediate_power_action_cannot_be_cancelled(self):
+        result = self.controller.handle(dict(action='poweroff', credential='a'*64, confirmation='VYPNOUT CM5', delayMinutes=0))
+        self.assertEqual(result['operation']['delayMinutes'], 0)
+        self.assertFalse(result['operation']['cancellable'])
+        self.assertEqual(self.runner.call_args.args[0], ['/usr/sbin/shutdown', '-P', 'now', 'NET administrator request'])
+        with self.assertRaisesRegex(ValueError, 'No scheduled'):
+            self.controller.handle(dict(action='cancel-power', credential='a'*64))
+
+    def test_power_delay_is_allowlisted(self):
+        for delay in (-1, 2, 15, '5', True):
+            with self.assertRaisesRegex(ValueError, 'Unsupported power action delay'):
+                self.controller.handle(dict(action='reboot', credential='a'*64, confirmation='RESTART CM5', delayMinutes=delay))
+        self.runner.assert_not_called()
 
     def test_stale_power_state_is_persisted_as_interrupted(self):
         host.STATE_DIR.mkdir()
@@ -90,6 +105,7 @@ class HostTests(unittest.TestCase):
         history = json.loads((host.STATE_DIR/'history.json').read_text())
         self.assertEqual(history[0]['version'], '0.2.1')
         self.assertEqual(history[0]['state'], 'succeeded')
+        self.assertEqual(history[0]['notes'], ['Telemetry'])
 
     def test_rate_limit(self):
         for _ in range(5):
