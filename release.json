@@ -1,10 +1,12 @@
 {
   "schemaVersion": 1,
-  "version": "0.2.0-dev.5",
-  "backend": "27be9e905b3267de6826f3e682fdb0842e58ede7",
-  "frontend": "1306965d77f8209e6bd4f28bb292c9b79ab2d7a8",
+  "version": "0.2.0-dev.6",
+  "backend": "404a3dc2e6c4566c111c775a87b0f093d44d4fdc",
+  "frontend": "df1e632595aa87c6427ada1ec831792574ac7a07",
   "notes": [
-    "Jednotné dokončení úspěšné aktualizace a obnovení stránky.",
-    "Výsledkový frame se po dokončení znovu nezobrazuje."
+    "Třísekundové bezpečnostní podržení pro citlivé akce.",
+    "Volitelná prodleva restartu a vypnutí: ihned, 1, 5 nebo 10 minut.",
+    "Opravené rušení odložených akcí bez opisování potvrzovacího textu.",
+    "Rozbalovací Info v historii aktualizací s release poznámkami."
   ]
 }
